@@ -1,0 +1,44 @@
+{
+    "name": "vercodea/auth-core",
+    "description": "Enterprise-grade authentication system with rate limiting (IP + user), VPN/proxy detection, pipeline access locking, CSRF protection, secure session management, OTP verification, magic link recovery, password strength validation, common/reserved password blocklists, and SQL injection prevention.",
+    "keywords": ["auth", "authentication", "login", "security", "session", "csrf", "otp", "rate-limit", "magic-link", "vpn-detection", "proxy-detection", "pipeline-lock", "password-strength", "php"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Prince Uche",
+            "email": "akasoprince@gmail.com",
+            "homepage": "https://github.com/princeaka140",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "ext-pdo": "*",
+        "ext-redis": "*",
+        "ext-curl": "*",
+        "ext-openssl": "*",
+        "ext-json": "*",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "files": [
+            "auth_init.php"
+        ]
+    },
+    "suggest": {
+        "ext-bcmath": "Required for advanced cryptographic operations",
+        "ext-sodium": "Recommended for additional security features"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    }
+}
