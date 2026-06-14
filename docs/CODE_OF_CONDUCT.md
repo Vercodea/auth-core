@@ -52,7 +52,7 @@ We pledge that everyone who participates in the Vercodea Auth Core community wil
 
 If you witness or experience behavior that violates this Code of Conduct, please report it to the maintainers:
 
-📧 **Email:** conduct@vercodea.com
+📧 **Email:** vercodea@gmail.com
 
 **Please include:**
 - Description of the violation
@@ -158,10 +158,10 @@ Thank you for helping us build a respectful, inclusive, and welcoming community.
 ## 📧 Contact & Questions
 
 **Questions about this Code of Conduct?**  
-Contact us at conduct@vercodea.com or open a discussion in our [Community Forum](https://github.com/vercodea/auth-core/discussions).
+Contact us at vercodea@gmail.com or open a discussion in our [Community Forum](https://github.com/vercodea/auth-core/discussions).
 
 **Need to report a violation?**  
-Email conduct@vercodea.com with details. All reports are handled confidentially.
+Email vercodea@gmail.com with details. All reports are handled confidentially.
 
 ---
 
