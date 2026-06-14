@@ -11,6 +11,9 @@
             "role": "Developer"
         }
     ],
+    "support": {
+        "source": "https://github.com/Vercodea/auth-core.git"
+    },
     "require": {
         "php": "^7.4 || ^8.0",
         "ext-pdo": "*",
