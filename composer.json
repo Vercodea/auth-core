@@ -12,6 +12,7 @@
         }
     ],
     "support": {
+        "type": "git",
         "source": "https://github.com/Vercodea/auth-core.git"
     },
     "require": {
