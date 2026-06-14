@@ -539,530 +539,387 @@ if ($result['status']) {
 ### 1. 🚀 `AuthInit::init()` - System Initialization
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#4f46e5', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#312e81', 'lineColor': '#4f46e5', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#6366f1', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#4f46e5', 'lineColor': '#818cf8', 'tertiaryColor': '#e0e7ff', 'tertiaryBorderColor': '#818cf8', 'tertiaryTextColor': '#1e1b4b'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(79, 70, 229, 0.1) Developer
-        participant Dev as 👨‍💻 Developer
+    box rgb(99, 102, 241, 0.2) 👨‍💻 DEVELOPER
+        participant Dev as Developer<br/>(Initialization)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Start as ⚙️ start_system.php
-        participant Query as 📋 query_loader.php
+    box rgb(52, 211, 153, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Start as start_system.php<br/>(DB Setup)
+        participant Query as query_loader.php<br/>(SQL Loader)
     end
-    box rgb(16, 185, 129, 0.1) Database Layer
-        participant MySQL as 🗄️ MySQL
+    box rgb(59, 130, 246, 0.2) 🗄️ DATABASE
+        participant MySQL as MYSQL<br/>(Data Storage)
     end
     
-    rect rgb(79, 70, 229, 0.05)
-        Note over Dev,MySQL: One-time database setup
+    rect rgb(99, 102, 241, 0.15)
+        Note over Dev,MySQL: SYSTEM INITIALIZATION - CREATE ALL TABLES
         Dev->>Auth: AuthInit::init()
-        Auth->>Start: init_db()
-        Start->>Query: QueryLoader::Load('startup/createtables.sql')
-        Query->>Query: verify_pipeline_access()
-        Query-->>Start: ✓ SQL content
-        Start->>MySQL: $stmt->prepare(sql)
-        Start->>MySQL: $stmt->execute()
-        MySQL-->>Start: ✓ Tables created
+        activate Auth
+        Auth->>Start: Call init_db()
+        activate Start
+        Start->>Query: Load SQL Files
+        activate Query
+        Query->>Query: Verify Access
+        Query-->>Start: SQL Ready
+        deactivate Query
+        Start->>MySQL: Execute CREATE
+        activate MySQL
+        MySQL-->>Start: Tables Created
+        deactivate MySQL
         Start-->>Auth: Complete
-        Auth-->>Dev: ✓ System ready
+        deactivate Start
+        Auth-->>Dev: System Ready ✅
+        deactivate Auth
     end
 ```
 
 ### 2. 📧 `AuthInit::auth_send_otp()` - Send OTP Email
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#8b5cf6', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#6d28d9', 'lineColor': '#8b5cf6', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#a855f7', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#9333ea', 'lineColor': '#d8b4fe', 'tertiaryColor': '#f3e8ff', 'tertiaryBorderColor': '#d8b4fe', 'tertiaryTextColor': '#581c87'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(139, 92, 246, 0.1) Client Layer
-        participant User as 👤 User
-        participant Web as 🌐 Web App
+    box rgb(168, 85, 247, 0.2) 👤 USER
+        participant User as User<br/>(Client)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant OTP as 🔐 otp_auth.php
-        participant Mailer as ✉️ otp_mailer.php
-        participant GW as 🚪 gateway_locker.php
+    box rgb(168, 85, 247, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant OTP as otp_auth.php<br/>(OTP Handler)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(OTP Storage)
     end
-    box rgb(16, 185, 129, 0.1) External Services
-        participant Resend as 📧 Resend API
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(34, 197, 94, 0.2) 📧 EMAIL
+        participant Resend as Resend API<br/>(Email Service)
     end
     
-    rect rgb(139, 92, 246, 0.05)
-        Note over User,Logs: OTP Request & Delivery Flow
-        
-        User->>Web: Request OTP for email
-        Web->>Auth: auth_send_otp(email)
-        
-        Auth->>Auth: filter_var(email, FILTER_VALIDATE_EMAIL)
-        
-        alt ❌ Invalid Email
-            Auth-->>Web: {status: false, msg: 'Invalid email format'}
-            Web-->>User: Show error
-        else ✅ Valid Email
-            
-            Auth->>OTP: otp_sender(email)
-            OTP->>GW: verify_pipeline_access()
-            OTP->>Mailer: signup_otp_manager(email)
-            Mailer->>GW: verify_pipeline_access()
-            
-            Mailer->>Redis: EXISTS email
-            
-            alt ⚠️ OTP Already Sent
-                Redis-->>Mailer: 1 (true)
-                Mailer-->>OTP: {status: false, msg: 'OTP already exists'}
-            else ✅ First Request
-                Redis-->>Mailer: 0 (false)
-                
-                Mailer->>Mailer: random_int(100000, 999999)
-                Mailer->>Mailer: date('Y-m-d H:i:s')
-                
-                Mailer->>Redis: hMSet(email, {otp, time})
-                Mailer->>Redis: expire(email, 300s)
-                
-                Mailer->>Mailer: setcookie('email', email)
-                
-                Mailer->>Mailer: Load 'signup_otp.html'
-                Mailer->>Mailer: str_replace('{$otp_code}', otp)
-                
-                Mailer->>Resend: POST /emails (Bearer Token)
-                Resend-->>Mailer: 200 OK
-                
-                Mailer->>Logs: log_activity("OTP sent to {email}")
-                Mailer-->>OTP: {status: true, msg: 'OTP sent'}
+    rect rgb(168, 85, 247, 0.15)
+        Note over User,Resend: SEND OTP - EMAIL DELIVERY
+        User->>Auth: Request OTP
+        activate Auth
+        Auth->>Auth: Validate Email
+        alt Email Invalid
+            Auth-->>User: Error ❌
+        else Email Valid
+            Auth->>OTP: Send OTP
+            activate OTP
+            OTP->>Redis: Check Exists
+            alt OTP Exists
+                Redis-->>OTP: Exists
+                OTP-->>Auth: Already Sent
+            else New Request
+                Redis-->>OTP: New
+                OTP->>OTP: Generate Code
+                OTP->>Redis: Store + TTL
+                OTP->>Resend: Send Email
+                activate Resend
+                Resend-->>OTP: Success ✅
+                deactivate Resend
+                OTP-->>Auth: Success
             end
-            
-            OTP-->>Auth: Return result
-            Auth-->>Web: Return result
-            Web-->>User: Show success message
+            deactivate OTP
+            Auth-->>User: OTP Sent ✅
         end
+        deactivate Auth
     end
 ```
 
 ### 3. 👤 `AuthInit::auth_register()` - User Registration
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#10b981', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#047857', 'lineColor': '#10b981', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#22c55e', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#16a34a', 'lineColor': '#86efac', 'tertiaryColor': '#dcfce7', 'tertiaryBorderColor': '#86efac', 'tertiaryTextColor': '#166534'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(16, 185, 129, 0.1) Client Layer
-        participant User as 👤 User
+    box rgb(34, 197, 94, 0.2) 👤 USER
+        participant User as User<br/>(Register)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Signup as 📝 signup.php
-        participant RL as ⏱️ ratelimit.php
-        participant GW as 🚪 gateway_locker.php
-        participant Verify as 🔐 email_otp_verifier.php
+    box rgb(34, 197, 94, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Signup as signup.php<br/>(Register Handler)
+        participant Verify as email_otp_verifier.php<br/>(Verify OTP)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(OTP Cache)
     end
-    box rgb(16, 185, 129, 0.1) Database Layer
-        participant MySQL as 🗄️ MySQL
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(59, 130, 246, 0.2) 🗄️ DATABASE
+        participant MySQL as MYSQL<br/>(Users Table)
     end
     
-    rect rgb(16, 185, 129, 0.05)
-        Note over User,Logs: User Registration Flow
-        
-        User->>Auth: auth_register(name, username, email, password, otp)
-        
-        Auth->>Auth: ✅ Validate name (2-100 chars, letters+spaces)
-        Auth->>Auth: ✅ Validate username (3-50 chars, a-z0-9_.-)
-        Auth->>Auth: ✅ Validate email format
-        Auth->>Auth: ✅ Validate OTP (6 digits)
-        Auth->>Auth: ✅ Validate password (8+ chars, complexity)
-        
-        alt ❌ Validation Fails
-            Auth-->>User: {status: false, msg: 'Validation failed'}
-        else ✅ All Valid
-            
-            Auth->>Signup: register_manager(...)
-            
-            Signup->>RL: ratelimit_manager_signup()
-            RL->>GW: verify_pipeline_access()
-            RL->>Redis: check_ip()
-            
-            alt ⚠️ IP Blocked (Rate Limit)
-                RL-->>Signup: Block (429)
-                Signup-->>Auth: {status: false, msg: 'Security Violated'}
-            else ✅ IP OK
-                RL-->>Signup: true
-                
-                Signup->>Signup: Get $_COOKIE['email']
-                
-                alt ❌ No Email Cookie
-                    Signup-->>Auth: {status: false, msg: 'Request OTP first'}
-                else ✅ Email Cookie Exists
-                    
-                    Signup->>Verify: verify_email(otp_input, email)
-                    Verify->>Redis: hGet(email, 'otp')
-                    
-                    alt ❌ OTP Invalid/Expired
-                        Redis-->>Verify: NULL
-                        Verify-->>Signup: false
-                        Signup-->>Auth: {status: false, msg: 'OTP verification failed'}
-                    else ✅ OTP Valid
-                        Verify-->>Signup: true
-                        
-                        Signup->>MySQL: SELECT FROM users WHERE username=? OR email=?
-                        
-                        alt ⚠️ User Already Exists
-                            MySQL-->>Signup: 1 row
-                            Signup-->>Auth: {status: false, msg: 'User exists'}
-                        else ✅ New User
-                            MySQL-->>Signup: 0 rows
-                            Signup->>MySQL: INSERT INTO users (name, username, email, password_hash)
-                            MySQL-->>Signup: ✓ Row inserted
-                            
-                            Signup->>Logs: log_activity("New user: {username} ({email})")
-                            Signup-->>Auth: {status: true, msg: 'Registration successful'}
-                        end
+    rect rgb(34, 197, 94, 0.15)
+        Note over User,MySQL: USER REGISTRATION - OTP + VALIDATION
+        User->>Auth: Register Request
+        activate Auth
+        Auth->>Auth: Validate Inputs
+        alt Validation Failed
+            Auth-->>User: Error ❌
+        else Valid
+            Auth->>Signup: Process Register
+            activate Signup
+            Signup->>Signup: Check Rate Limit
+            alt Rate Limited
+                Signup-->>Auth: Blocked ❌
+            else OK
+                Signup->>Verify: Verify OTP
+                activate Verify
+                Verify->>Redis: Get OTP
+                alt Invalid OTP
+                    Redis-->>Verify: Not Found
+                    Verify-->>Signup: Invalid
+                else Valid OTP
+                    Redis-->>Verify: OTP Found
+                    Verify->>MySQL: Check User Exists
+                    alt User Exists
+                        MySQL-->>Verify: Found
+                        Verify-->>Signup: Duplicate
+                    else New User
+                        MySQL-->>Verify: Not Found
+                        Verify->>MySQL: INSERT User
+                        MySQL-->>Verify: Success ✅
+                        Verify-->>Signup: Success
                     end
                 end
+                deactivate Verify
+                Signup-->>Auth: Success ✅
             end
+            deactivate Signup
+            Auth-->>User: Welcome! ✅
         end
-        
-        Auth-->>User: Return result
+        deactivate Auth
     end
 ```
 
 ### 4. 🔐 `AuthInit::auth_login()` - User Login
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#3b82f6', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#3b82f6', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#3b82f6', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#1d4ed8', 'lineColor': '#93c5fd', 'tertiaryColor': '#dbeafe', 'tertiaryBorderColor': '#93c5fd', 'tertiaryTextColor': '#082f49'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(59, 130, 246, 0.1) Client Layer
-        participant User as 👤 User
+    box rgb(59, 130, 246, 0.2) 👤 USER
+        participant User as User<br/>(Login)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Signin as 🔑 signin.php
-        participant RL as ⏱️ ratelimit.php
-        participant NetChk as 🌍 network_check.php
+    box rgb(59, 130, 246, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Signin as signin.php<br/>(Login Handler)
+        participant NetChk as network_check.php<br/>(Security Check)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(Session Store)
     end
-    box rgb(139, 92, 246, 0.1) External Services
-        participant Proxy as 🔍 ProxyCheck.io
+    box rgb(168, 85, 247, 0.2) 🔍 SECURITY
+        participant Proxy as ProxyCheck.io<br/>(VPN Detection)
     end
-    box rgb(16, 185, 129, 0.1) Database Layer
-        participant MySQL as 🗄️ MySQL
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(59, 130, 246, 0.2) 🗄️ DATABASE
+        participant MySQL as MYSQL<br/>(User DB)
     end
     
-    rect rgb(59, 130, 246, 0.05)
-        Note over User,Logs: User Authentication Flow
-        
-        User->>Auth: auth_login(username/email, password)
-        
-        Auth->>Auth: ✅ Validate username OR email required
-        Auth->>Auth: ✅ Validate email format (if provided)
-        Auth->>Auth: ✅ Validate username format (if provided)
-        Auth->>Auth: ✅ Validate password not empty
-        Auth->>Auth: ✅ Validate password max length (4096)
-        
-        alt ❌ Validation Fails
-            Auth-->>User: {status: false, msg: 'Validation failed'}
-        else ✅ Valid
-            
-            Auth->>Signin: login_manager(...)
-            
-            Signin->>RL: ratelimit_manager_signin(user)
-            
-            RL->>NetChk: check_ip()
-            NetChk->>NetChk: Extract IP (X-Forwarded-For / REMOTE_ADDR)
-            NetChk->>Proxy: GET /v2/{ip}?vpn=1&asn=1
-            
-            alt 🚫 VPN/Proxy Detected
-                Proxy-->>NetChk: {proxy: 'yes'} or {type: 'VPN'}
-                NetChk->>Logs: log_activity("⚠️ VPN/Proxy detected: {ip}")
-                NetChk-->>RL: {status: 'blocked'}
-                RL-->>Signin: false
-                Signin-->>Auth: {status: false, msg: 'Security Violated'}
-                Auth-->>User: 403 Forbidden
-            else ✅ Clean IP
-                Proxy-->>NetChk: {proxy: 'no', type: 'residential'}
-                NetChk-->>RL: {status: 'allowed', ip: ip}
-                
-                RL->>MySQL: SELECT id FROM users WHERE username=? OR email=?
-                
-                alt ❌ User Not Found
-                    MySQL-->>RL: NULL
-                    RL->>RL: Increment IP attempts
-                    RL-->>Signin: false
-                    Signin-->>Auth: {status: false, msg: 'Invalid Credentials'}
-                else ✅ User Found
-                    MySQL-->>RL: {id, username, password_hash}
-                    
-                    RL->>Redis: Check IP penalty
-                    RL->>Redis: Check User penalty
-                    
-                    alt ⚠️ Rate Limit Exceeded
-                        RL-->>Signin: Block (429)
-                        Signin-->>Auth: {status: false, msg: 'Too many attempts'}
-                        Auth-->>User: 429 Too Many Requests
-                    else ✅ Within Limits
-                        RL->>RL: Increment attempts
-                        
-                        Signin->>Signin: password_verify(pass, hash)
-                        
-                        alt ❌ Wrong Password
-                            Signin-->>Auth: {status: false, msg: 'Invalid Credentials'}
-                        else ✅ Password Match
-                            
-                            Signin->>Signin: Generate session_id (random_bytes)
-                            Signin->>Signin: Generate csrf_token (random_bytes)
-                            Signin->>Signin: Hash CSRF token
-                            
-                            Signin->>Redis: hMSet("session:{id}", {user_id, username, csrf_hash})
-                            Signin->>Redis: expire("session:{id}", SESSION_EXPIRY)
-                            
-                            Signin->>Signin: setcookie('csrf-token', token, flags)
-                            Signin->>Signin: setcookie('session-id', id, flags)
-                            
-                            Signin->>Logs: log_activity("✅ Login: {username} from {ip}")
-                            
-                            Signin-->>Auth: {status: true, msg: 'Login successful'}
-                            Auth-->>User: ✅ Authenticated + Session cookies
-                        end
+    rect rgb(59, 130, 246, 0.15)
+        Note over User,MySQL: USER LOGIN - SECURITY & AUTHENTICATION
+        User->>Auth: Login Request
+        activate Auth
+        Auth->>Auth: Validate Format
+        alt Invalid Format
+            Auth-->>User: Error ❌
+        else Valid Format
+            Auth->>Signin: Process Login
+            activate Signin
+            Signin->>NetChk: Check IP/VPN
+            activate NetChk
+            NetChk->>Proxy: Query IP Status
+            activate Proxy
+            alt VPN/Proxy Detected
+                Proxy-->>NetChk: Blocked ❌
+                NetChk-->>Signin: Security Issue ❌
+            else Clean IP
+                Proxy-->>NetChk: OK ✅
+                deactivate Proxy
+                NetChk-->>Signin: Allowed
+                deactivate NetChk
+                Signin->>MySQL: Find User
+                activate MySQL
+                alt User Not Found
+                    MySQL-->>Signin: Not Found
+                    Signin-->>Auth: Invalid ❌
+                else User Found
+                    MySQL-->>Signin: Record
+                    Signin->>Signin: Verify Password
+                    alt Wrong Password
+                        Signin-->>Auth: Invalid ❌
+                    else Correct
+                        Signin->>Redis: Create Session
+                        Redis-->>Signin: Session ID
+                        Signin->>Signin: Set Cookies
+                        Signin-->>Auth: Success ✅
                     end
                 end
+                deactivate MySQL
             end
+            deactivate Signin
+            Auth-->>User: Authenticated ✅
         end
+        deactivate Auth
     end
 ```
 
 ### 5. 🚪 `AuthInit::auth_logout()` - User Logout
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#ef4444', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#b91c1c', 'lineColor': '#ef4444', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#ef4444', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#b91c1c', 'lineColor': '#fca5a5', 'tertiaryColor': '#fee2e2', 'tertiaryBorderColor': '#fca5a5', 'tertiaryTextColor': '#7f1d1d'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(239, 68, 68, 0.1) Client Layer
-        participant User as 👤 User
+    box rgb(239, 68, 68, 0.2) 👤 USER
+        participant User as User<br/>(Logout)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Logout as 🚪 logout.php
+    box rgb(239, 68, 68, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Logout as logout.php<br/>(Logout Handler)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(Session Store)
     end
     
-    rect rgb(239, 68, 68, 0.05)
-        Note over User,Logs: User Logout Flow
-        
-        User->>Auth: auth_logout()
-        Auth->>Logout: logout_manager()
-        
-        Logout->>Logout: Get session_token = $_COOKIE['csrf-token']
-        Logout->>Logout: Get session_id = $_COOKIE['session-id']
-        
-        alt ❌ Missing Cookies
-            Logout-->>Auth: {status: false, msg: 'Unauthorized'}
-            Auth-->>User: 401 Unauthorized
-        else ✅ Cookies Exist
-            
-            Logout->>Redis: hGet("session:{session_id}", 'csrf_token')
-            
-            alt ❌ Session Not Found
-                Redis-->>Logout: NULL
-                Logout-->>Auth: {status: false, msg: 'Session expired'}
-            else ✅ Session Found
-                Redis-->>Logout: stored_csrf_hash
-                
-                Logout->>Redis: hGet("session:{session_id}", 'username')
-                Redis-->>Logout: username
-                
-                Logout->>Logout: hash_equals(stored_hash, hash('sha256', session_token))
-                
-                alt ❌ CSRF Token Mismatch
-                    Logout-->>Auth: {status: false, msg: 'Invalid session'}
-                    Auth-->>User: 403 Forbidden
-                else ✅ Token Valid
-                    
-                    Logout->>Redis: del("session:{session_id}")
-                    Redis-->>Logout: ✓ Deleted
-                    
-                    Logout->>Logout: unset($_COOKIE['csrf-token'])
-                    Logout->>Logout: unset($_COOKIE['session-id'])
-                    
-                    Logout->>Logout: setcookie('csrf-token', '', time()-3600)
-                    Logout->>Logout: setcookie('session-id', '', time()-3600)
-                    
-                    Logout->>Logs: log_activity("🚪 {username} logged out")
-                    
-                    Logout-->>Auth: {status: true, msg: 'Logout Successful'}
-                    Auth-->>User: ✅ Logged out
+    rect rgb(239, 68, 68, 0.15)
+        Note over User,Redis: SESSION TERMINATION - CLEANUP & SECURITY
+        User->>Auth: Logout Request
+        activate Auth
+        Auth->>Logout: Process Logout
+        activate Logout
+        Logout->>Logout: Get Cookies
+        alt Cookies Missing
+            Logout-->>Auth: Error ❌
+        else Cookies Present
+            Logout->>Redis: Verify Session
+            alt Session Not Found
+                Redis-->>Logout: Expired
+                Logout-->>Auth: Error ❌
+            else Session Found
+                Redis-->>Logout: Session Data
+                Logout->>Logout: CSRF Check
+                alt Invalid Token
+                    Logout-->>Auth: Forbidden ❌
+                else Valid Token
+                    Logout->>Redis: Delete Session
+                    Redis-->>Logout: Deleted ✅
+                    Logout->>Logout: Clear Cookies
+                    Logout-->>Auth: Success ✅
                 end
             end
         end
+        deactivate Logout
+        Auth-->>User: Logged Out ✅
+        deactivate Auth
     end
 ```
 
 ### 6. 🔑 `AuthInit::auth_account_recovery_link()` - Send Recovery Link
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#f59e0b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#b45309', 'lineColor': '#f59e0b', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#f59e0b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#b45309', 'lineColor': '#fcd34d', 'tertiaryColor': '#fef3c7', 'tertiaryBorderColor': '#fcd34d', 'tertiaryTextColor': '#78350f'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(245, 158, 11, 0.1) Client Layer
-        participant User as 👤 User
+    box rgb(245, 158, 11, 0.2) 👤 USER
+        participant User as User<br/>(Recovery)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Mailer as ✉️ otp_mailer.php
+    box rgb(245, 158, 11, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Mailer as otp_mailer.php<br/>(Mail Handler)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(Token Store)
     end
-    box rgb(16, 185, 129, 0.1) External Services
-        participant Resend as 📧 Resend API
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(168, 85, 247, 0.2) 📧 EMAIL
+        participant Resend as Resend API<br/>(Email Service)
     end
     
-    rect rgb(245, 158, 11, 0.05)
-        Note over User,Logs: Password Recovery Request Flow
-        
-        User->>Auth: auth_account_recovery_link(email)
-        
-        Auth->>Auth: filter_var(email, FILTER_VALIDATE_EMAIL)
-        
-        alt ❌ Invalid Email
-            Auth-->>User: {status: false, msg: 'Invalid email'}
-        else ✅ Valid Email
-            
-            Auth->>Mailer: account_recovery_magic_link_manager(email)
-            
-            Mailer->>Mailer: Generate magic_token (bin2hex(random_bytes(16)))
-            Mailer->>Mailer: Generate magic_id (random_int(100000, 999999))
-            Mailer->>Mailer: Build reset_url = base?token=X&id=Y
-            
-            Mailer->>Mailer: Load 'account_recovery.html'
-            Mailer->>Mailer: str_replace('{$reset_url}', reset_url)
-            
-            Mailer->>Redis: hExists("account_recovery:{magic_id}")
-            
-            alt ⚠️ Recovery Already Sent
-                Redis-->>Mailer: 1 (exists)
-                Mailer-->>Auth: {status: false, msg: 'Already sent. Wait...'}
-            else ✅ First Request
-                Redis-->>Mailer: 0 (not exists)
-                
-                Mailer->>Redis: hMSet("account_recovery:{magic_id}", {token_hash, email, time})
-                Mailer->>Redis: expire("account_recovery:{magic_id}", 3600s)
-                
-                Mailer->>Mailer: setcookie('email', email, flags)
-                
-                Mailer->>Resend: POST /emails (Recovery template)
-                Resend-->>Mailer: 200 OK
-                
-                alt ❌ Email Send Failed
-                    Mailer-->>Auth: {status: false, msg: 'Failed to send'}
-                else ✅ Email Sent
-                    Mailer->>Logs: log_activity("📧 Recovery link sent to {email}")
-                    Mailer-->>Auth: {status: true, msg: 'Recovery link sent'}
-                end
+    rect rgb(245, 158, 11, 0.15)
+        Note over User,Resend: RECOVERY LINK - PASSWORD RESET REQUEST
+        User->>Auth: Request Recovery Link
+        activate Auth
+        Auth->>Auth: Validate Email
+        alt Invalid Email
+            Auth-->>User: Error ❌
+        else Valid Email
+            Auth->>Mailer: Send Recovery Link
+            activate Mailer
+            Mailer->>Mailer: Generate Token
+            Mailer->>Mailer: Generate ID
+            Mailer->>Redis: Check Exists
+            alt Link Already Sent
+                Redis-->>Mailer: Exists
+                Mailer-->>Auth: Wait Time
+            else New Request
+                Redis-->>Mailer: New
+                Mailer->>Mailer: Build URL
+                Mailer->>Mailer: Load Template
+                Mailer->>Resend: Send Email
+                activate Resend
+                Resend-->>Mailer: Success ✅
+                deactivate Resend
+                Mailer->>Redis: Store + TTL
+                Mailer-->>Auth: Sent ✅
             end
+            deactivate Mailer
+            Auth-->>User: Check Email ✅
         end
-        
-        Auth-->>User: Return result
+        deactivate Auth
     end
 ```
 
 ### 7. 🔓 `AuthInit::auth_verify_recovery()` - Reset Password
 
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'primaryColor': '#10b981', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#047857', 'lineColor': '#10b981', 'fontSize': '16px', 'fontFamily': 'arial'}, 'sequence': {'mirrorActors': false}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '32px', 'fontFamily': 'arial', 'primaryColor': '#10b981', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#047857', 'lineColor': '#86efac', 'tertiaryColor': '#dcfce7', 'tertiaryBorderColor': '#86efac', 'tertiaryTextColor': '#166534'}, 'sequence': {'mirrorActors': false, 'actorMargin': 100, 'actorFontSize': '32px', 'messageFontSize': '32px'}}}%%
 sequenceDiagram
     autonumber
-    box rgb(16, 185, 129, 0.1) Client Layer
-        participant User as 👤 User
+    box rgb(16, 185, 129, 0.2) 👤 USER
+        participant User as User<br/>(Reset)
     end
-    box rgb(99, 102, 241, 0.1) Application Layer
-        participant Auth as 📄 auth_init.php
-        participant Recover as 🔑 account_recover.php
+    box rgb(16, 185, 129, 0.2) ⚙️ APPLICATION
+        participant Auth as AuthInit.php<br/>(Entry Point)
+        participant Recover as account_recover.php<br/>(Recovery Handler)
     end
-    box rgb(239, 68, 68, 0.1) Cache Layer
-        participant Redis as ⚡ Redis
+    box rgb(239, 68, 68, 0.2) ⚡ CACHE
+        participant Redis as REDIS<br/>(Token Store)
     end
-    box rgb(16, 185, 129, 0.1) Database Layer
-        participant MySQL as 🗄️ MySQL
-    end
-    box rgb(245, 158, 11, 0.1) Monitoring
-        participant Logs as 📝 Logger
+    box rgb(59, 130, 246, 0.2) 🗄️ DATABASE
+        participant MySQL as MYSQL<br/>(Users Table)
     end
     
-    rect rgb(16, 185, 129, 0.05)
-        Note over User,Logs: Password Reset Flow
-        
-        User->>Auth: auth_verify_recovery(magic_id, magic_token, new_pass, confirm_pass)
-        
-        Auth->>Auth: ✅ Validate passwords not empty
-        Auth->>Auth: ✅ Validate passwords match
-        Auth->>Auth: ✅ Validate length >= 8
-        Auth->>Auth: ✅ Validate uppercase letter
-        Auth->>Auth: ✅ Validate lowercase letter
-        Auth->>Auth: ✅ Validate number
-        Auth->>Auth: ✅ Validate special character
-        
-        alt ❌ Validation Fails
-            Auth-->>User: {status: false, msg: 'Password requirements not met'}
-        else ✅ Valid
-            
-            Auth->>Recover: account_recovery_manager(magic_id, magic_token, new_pass, confirm_pass)
-            
-            Recover->>Redis: hGetAll("account_recovery:{magic_id}")
-            
-            alt ❌ Token Not Found
-                Redis-->>Recover: NULL
-                Recover-->>Auth: {status: false, msg: 'Invalid or expired link'}
-                Auth-->>User: 🔗 Link expired
-            else ✅ Token Found
-                Redis-->>Recover: {token_hash, email, timestamp}
-                
-                Recover->>Recover: Get email from $_COOKIE['email']
-                Recover->>Recover: hash_equals(stored_hash, hash('sha256', magic_token))
-                
-                alt ❌ Token Mismatch
-                    Recover-->>Auth: {status: false, msg: 'Invalid token'}
-                else ✅ Token Valid
-                    
-                    Recover->>Recover: password_hash(new_password, PASSWORD_DEFAULT)
-                    
-                    Recover->>MySQL: UPDATE users SET password=? WHERE email=?
-                    MySQL-->>Recover: ✓ 1 row updated
-                    
-                    Recover->>Redis: del("account_recovery:{magic_id}")
-                    Redis-->>Recover: ✓ Deleted (one-time use)
-                    
-                    Recover->>Logs: log_activity("✅ Password reset for {email}")
-                    
-                    Recover-->>Auth: {status: true, msg: 'Password reset successful'}
-                    Auth-->>User: ✅ Password changed. Please login.
+    rect rgb(16, 185, 129, 0.15)
+        Note over User,MySQL: PASSWORD RESET - SECURE TOKEN VERIFICATION
+        User->>Auth: Reset Password
+        activate Auth
+        Auth->>Auth: Validate Passwords
+        alt Invalid Format
+            Auth-->>User: Error ❌
+        else Valid Format
+            Auth->>Recover: Process Reset
+            activate Recover
+            Recover->>Redis: Get Token
+            alt Token Not Found
+                Redis-->>Recover: Expired
+                Recover-->>Auth: Link Expired ❌
+            else Token Found
+                Redis-->>Recover: Token Data
+                Recover->>Recover: Verify Token
+                alt Invalid Token
+                    Recover-->>Auth: Invalid ❌
+                else Valid Token
+                    Recover->>Recover: Hash Password
+                    Recover->>MySQL: Update Password
+                    activate MySQL
+                    MySQL-->>Recover: Updated ✅
+                    deactivate MySQL
+                    Recover->>Redis: Delete Token
+                    Recover-->>Auth: Success ✅
                 end
             end
+            deactivate Recover
+            Auth-->>User: Password Changed ✅
         end
+        deactivate Auth
     end
 ```
 
