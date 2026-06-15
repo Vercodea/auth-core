@@ -1,7 +1,8 @@
 <?php
 function log_activity($message) {
     // Use environment variable for log directory, fallback to default
-    $log_dir = env('LOG_DIR', __DIR__ . '/../logs');
+    $log_env = env('LOG_DIR', __DIR__ . '/../../../../logs');
+    $log_dir = __DIR__ . "{$log_env}../../../../logs";
     if (!is_dir($log_dir)) {
         mkdir($log_dir, 0755, true);
     }

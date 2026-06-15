@@ -1,18 +1,23 @@
 <?php
-require_once("src/signup.php");
-require_once("src/logout.php");
-require_once("src/otp_auth.php");
-require_once("src/signin.php");
-require_once("src/account_recover.php");
-require_once("middleware/file_access_lock/gateway_locker.php");
-require_once("security-checks_tools/common_passwords.txt");
-require_once("middleware/start_system.php");
-require_once("security-checks_tools/reserved_passwords.txt");
-require_once("middleware/email_otp_verifier.php");
+require_once __DIR__ . '/src/signup.php';
+require_once __DIR__ . '/src/logout.php';
+require_once __DIR__ . '/src/otp_auth.php';
+require_once __DIR__ . '/src/signin.php';
+require_once __DIR__ . '/src/account_recover.php';
+require_once __DIR__ . '/middleware/file_access_lock/gateway_locker.php';
+require_once __DIR__ . '/middleware/start_system.php';
+require_once __DIR__ . '/middleware/email_otp_verifier.php';
 
-verify_pipeline_access(['signup.php', 'signin.php', 'otp_auth.php', 'logout.php', 'auth_init.php', 'gateway_locker.php', 'otp_mailer.php', 'email_otp_verifier.php']);
+$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+$caller_file = __DIR__ . '/../src/entry/index.php';
 
-class AuthInit
+if (!$trace[0]['file'] || !file_exists($caller_file)) {
+    die('Unauthorized access');
+}
+
+verify_pipeline_access(['signup.php', 'signin.php', 'otp_auth.php', 'logout.php', 'auth_init.php', 'gateway_locker.php', 'otp_mailer.php', 'email_otp_verifier.php', 'index.php']);
+trait AuthInit_trait
+
 {
     public static function init(){
         init_db();
@@ -197,7 +202,7 @@ class AuthInit
             return ['status' => false, 'msg' => 'Password must contain at least one special character'];
         }
 
-        return account_recovery_manager($magic_id, $magic_token, $new_password, $confirm_password);
+        return account_recovery_manager($magic_id, $magic_token, $confirm_password);
     }
 
 }

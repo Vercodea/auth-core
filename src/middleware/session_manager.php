@@ -1,5 +1,5 @@
 <?php
-require_once("../middleware/file_access_lock/gateway_locker.php");
+require_once __DIR__ . '/file_access_lock/gateway_locker.php';
 
 verify_pipeline_access(['signin.php']);
 

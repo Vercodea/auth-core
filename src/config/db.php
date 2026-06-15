@@ -6,11 +6,11 @@
 
 // Load environment first to access env() helper
 require_once('config_env.php');
-require_once('../Query/query_loader.php');
+require_once __DIR__ . '/../Query/query_loader.php';
 config_env();
 
-// Use environment variable for log directory, fallback to default
-$log_dir = env('LOG_DIR', __DIR__ . '/../logs');
+$log_env = env('LOG_DIR', __DIR__ . '/../../../../logs');
+$log_dir = __DIR__ . "{$log_env}../../../../logs";
 if (!is_dir($log_dir)) {
     @mkdir($log_dir, 0755, true);
 }
@@ -28,7 +28,7 @@ if ($app_env === 'production') {
     ini_set('display_errors', 1);  // Show errors in development
 }
 
-require_once("../middleware/file_access_lock/gateway_locker.php");
+require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
 verify_pipeline_access([
   'signup.php',
   'signin.php',
@@ -36,7 +36,8 @@ verify_pipeline_access([
   'account_recover.php',
   'ratelimit.php',
   'otp_mailer.php',
-  'email_otp_verifier.php'
+  'email_otp_verifier.php',
+  'db.php'
 ]);
 function redis_manager()
 {
@@ -63,6 +64,7 @@ function redis_manager()
             }
         }
     } catch (Exception $e) {
+        http_response_code(500);
         error_log('Redis connection error: ' . $e->getMessage());
         exit;
     }
@@ -89,6 +91,7 @@ function mysqldb_manager() {
         : "mysql:host=$host;port=$port;dbname=$dbname;charset=$charset";
         $db = new PDO($dsn, $username, $password, $options);  
     }catch (Exception $e) {
+        http_response_code(500);
         error_log($e->getMessage());
         exit;
     }

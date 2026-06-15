@@ -13,8 +13,8 @@ function config_env()
     $loaded = true;
     
     try {
-        require_once __DIR__ . '/../../autoload.php';
-        
+        require_once __DIR__ . '/../../../../vendor/autoload.php';
+        //require_once__DIR__ . '/../../autoload.php'
         $root_dir = dirname(__DIR__, 4);
         $dotenv = Dotenv\Dotenv::createImmutable($root_dir);
         $dotenv->load();

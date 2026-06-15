@@ -3,8 +3,8 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/logs.php';
 require_once __DIR__ . '/../../config/config_env.php';
-require_once('../../middleware/file_access_lock/gateway_locker.php');
-require_once __DIR__ . '/../otp_manager/Otp_messages/message_loader.php';
+require_once __DIR__ . '/../file_access_lock/gateway_locker.php';
+require_once __DIR__ . '/Otp_messages/message_loader.php';
 config_env();
 
 verify_pipeline_access(['otp_auth.php', 'otp_mailer.php', 'email_otp_verifier.php']);
@@ -92,15 +92,15 @@ function account_recovery_magic_link_manager($email)
         ];
         $cache->hMSet("account_recovery:{$magic_id}", $details);
         $cache->expire("account_recovery:{$magic_id}", $limit_time);
-        
+
         $cookies_conf = [
-                'expires' => time() + $limit_time,
-                'path' => env('SESSION_COOKIE_PATH', '/'),
-                'domain' => env('DOMAIN','localhost'),
-                'secure' => env('SESSION_COOKIE_SECURE', false),
-                'httponly' => env('SESSION_COOKIE_HTTPONLY', true),
-                'samesite' => env('SESSION_COOKIE_SAMESITE', 'Strict'),
-            ];
+            'expires' => time() + $limit_time,
+            'path' => env('SESSION_COOKIE_PATH', '/'),
+            'domain' => env('DOMAIN', 'localhost'),
+            'secure' => env('SESSION_COOKIE_SECURE', false),
+            'httponly' => env('SESSION_COOKIE_HTTPONLY', true),
+            'samesite' => env('SESSION_COOKIE_SAMESITE', 'Strict'),
+        ];
 
         setcookie('email', $email, $cookies_conf);
         // Send magic link email
@@ -133,6 +133,7 @@ function account_recovery_magic_link_manager($email)
         return ['status' => true, 'msg' => 'Recovery link sent to your email'];
 
     } catch (Exception $e) {
+        http_response_code(500);
         error_log("Magic link error for {$email}: " . $e->getMessage());
         return ['status' => false, 'msg' => 'An error occurred. Please try again later.'];
     }

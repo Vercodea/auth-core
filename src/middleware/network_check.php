@@ -1,6 +1,6 @@
 <?php
-require_once("../middleware/file_access_lock/gateway_locker.php");
-require_once("../config/logs.php");
+require_once __DIR__ . '/file_access_lock/gateway_locker.php';
+require_once __DIR__ . '/../config/logs.php';
 
 verify_pipeline_access(['ratelimit.php']);
 

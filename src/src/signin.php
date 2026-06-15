@@ -1,10 +1,10 @@
 <?php
-require_once('../config/db.php');
-require_once('../config/logs.php');
-require_once('../middleware/session_manager.php');
-require_once('../middleware/file_access_lock/gateway_locker.php');
-require_once('../middleware/ratelimit.php');
-require_once('../config/config_env.php');
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/logs.php';
+require_once __DIR__ . '/../middleware/session_manager.php';
+require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
+require_once __DIR__ . '/../middleware/ratelimit.php';
+require_once __DIR__ . '/../config/config_env.php';
 require_once __DIR__ . '/../Query/query_loader.php';
 
 verify_pipeline_access(['ratelimit.php', 'session_manager.php']);
@@ -62,6 +62,7 @@ function login_manager($username, $email, $password)
         }
         return ['status' => false, 'msg' => 'Invalid Credentials'];
     } catch (Exception $e) {
+        http_response_code(500);
         error_log($e->getMessage());
         return ['status' => false, 'msg' => 'An error occurred. Please try again later.'];
     }
