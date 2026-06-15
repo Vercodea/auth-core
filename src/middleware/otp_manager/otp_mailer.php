@@ -43,16 +43,19 @@ function signup_otp_manager($email)
                 'Authorization: Bearer ' . $otp_api_key,
                 'Content-Type: application/json'
             ]);
-            curl_exec($ch);
+            $response = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-            if ($http_code !== 200) {
-                error_log("Magic link email failed to send to {$email}. HTTP: {$http_code}");
+            if ($http_code !== 200 || $response === false) {
+                log_activity("Failed to send OTP to {$email}. HTTP: {$http_code}");
                 return ['status' => false, 'msg' => 'Failed to send recovery email. Please try again.'];
             }
+            
+            log_activity("OTP sent to {$email}");
+            return ['status' => true, 'msg' => 'OTP sent successfully'];
+
         }
-        log_activity("OTP sent to {$email}");
-        return ['status' => true, 'msg' => 'OTP sent successfully'];
+
     } catch (Exception $e) {
         error_log($e->getMessage());
         return ['status' => false, 'msg' => 'Failed to send OTP. Please try again.'];
@@ -66,6 +69,7 @@ function account_recovery_magic_link_manager($email)
     $send_email_url = (string) env('SEND_OTP_URL', '');
 
     try {
+
         // Generate magic link tokens
         $magic_token = bin2hex(random_bytes(16));
         $magic_id = random_int(100000, 999999);
@@ -73,14 +77,13 @@ function account_recovery_magic_link_manager($email)
         $reset_url = "{$reset_page}?token={$magic_token}&id={$magic_id}";
 
         // Load email template
-        $html_message = OtpMessageLoader::Load('account_recovery.html', ['account_recover.php']);
+        $html_message = OtpMessageLoader::Load('account_recovery.html', ['otp_mailer.php']);
         $html_message = str_replace('{$reset_url}', $reset_url, $html_message);
-
         $limit_time = (int) env('ACCOUNT_RECOVERY_LIMIT_TIME', 300);
         $time_remaining = $limit_time;
 
         // Check if recovery already requested for this magic_id
-        if ($cache->hExists("account_recovery:{$magic_id}")) {
+        if ($cache->exists("account_recovery:{$magic_id}")) {
             return ['status' => false, 'msg' => "A recovery email has already been sent. Please check your inbox or wait {$time_remaining} seconds to request a new one."];
         }
 

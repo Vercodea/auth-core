@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../middleware/otp_manager/otp_mailer.php';
 require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
+$current_file = __DIR__ . '/../auth_init.php';
+restrict_file_access($current_file);
 verify_pipeline_access(['otp_mailer.php']);
 function otp_sender($email) {
     $mail_otp =signup_otp_manager($email);

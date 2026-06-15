@@ -1,35 +1,29 @@
 <?php
 declare(strict_types=1);
-
 function verify_pipeline_access(array $allowed_files): bool
 {
-    // 1. Capture the trace EXACTLY at the moment the check is requested
-    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-
-    // We look at index 1 because index 0 is this wrapper function itself
-    $caller_file = (!empty($trace[1]['file']) ? basename($trace[1]['file']) : null);
-
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, );
+    $caller_file = basename($trace[1]['file'] ?? '');
     $public_file = realpath(__DIR__ . '/../../entry/index.php');
 
     if ($public_file || file_exists($public_file)) {
         return true;
     }
-
-
-    // 2. Enforce the whitelist
-    if ($caller_file === null || !in_array($caller_file, $allowed_files, true)) {
-
-        // Log the breach for your security dashboards
-        error_log("Vercodea Intrusion Prevention: Pipeline Violation by [" . ($caller_file ?? 'UNKNOWN') . "]");
-
-        // Kill the request with a clean JSON defense response
+    if (!in_array($caller_file, $allowed_files, true)) {
         http_response_code(403);
-        header('Content-Type: application/json');
-        echo json_encode([
-            'status' => 'blocked',
-            'reason' => 'Directory Pipeline Violation'
-        ]);
+        echo 'Unauthorized access';
         exit;
+    }
+    return true;
+}
+
+function restrict_file_access($caller_file)
+{
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+    if (!$trace[0]['file'] || !file_exists($caller_file)) {
+        http_response_code(429);
+        log_activity('Unauthorized access attempt to signin.php');
+        die('Unauthorized access');
     }
     return true;
 }

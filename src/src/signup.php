@@ -5,6 +5,10 @@ require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
 require_once __DIR__ . '/../middleware/ratelimit.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../Query/query_loader.php';
+require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
+
+$current_file = __DIR__ . '/../auth_init.php';
+restrict_file_access($current_file);
 
 verify_pipeline_access(['otp_mailer.php', 'ratelimit.php', 'email_otp_verifier.php', 'query_loader.php']);
 function register_manager($name, $username, $email, $password, $otp_input)

@@ -2,6 +2,11 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/logs.php';
 require_once __DIR__ . '/../config/config_env.php';
+require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
+
+$current_file = __DIR__ . '/../auth_init.php';
+restrict_file_access($current_file);
+
 config_env();
 function logout_manager()
 {

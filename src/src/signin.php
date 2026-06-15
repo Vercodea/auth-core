@@ -6,9 +6,13 @@ require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
 require_once __DIR__ . '/../middleware/ratelimit.php';
 require_once __DIR__ . '/../config/config_env.php';
 require_once __DIR__ . '/../Query/query_loader.php';
+require_once __DIR__ . '/../middleware/file_access_lock/gateway_locker.php';
 
-verify_pipeline_access(['ratelimit.php', 'session_manager.php']);
+$current_file = __DIR__ . '/../auth_init.php';
+restrict_file_access($current_file);
+
 config_env();
+
 function login_manager($username, $email, $password)
 {
     $conn = mysqldb_manager();
