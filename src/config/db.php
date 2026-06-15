@@ -9,8 +9,8 @@ require_once('config_env.php');
 require_once __DIR__ . '/../Query/query_loader.php';
 config_env();
 
-$log_env = env('LOG_DIR', __DIR__ . '/../../../../logs');
-$log_dir = __DIR__ . "{$log_env}../../../../logs";
+$log_env = env('LOG_DIR', __DIR__ . '/../../../../../logs');
+$log_dir = __DIR__ . "{$log_env}../../../../../logs";
 if (!is_dir($log_dir)) {
     @mkdir($log_dir, 0755, true);
 }
