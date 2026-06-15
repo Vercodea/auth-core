@@ -1,7 +1,22 @@
 {
     "name": "vercodea/auth-core",
     "description": "Enterprise-grade authentication system with rate limiting (IP + user), VPN/proxy detection, pipeline access locking, CSRF protection, secure session management, OTP verification, magic link recovery, password strength validation, common/reserved password blocklists, and SQL injection prevention.",
-    "keywords": ["auth", "authentication", "login", "security", "session", "csrf", "otp", "rate-limit", "magic-link", "vpn-detection", "proxy-detection", "pipeline-lock", "password-strength", "php"],
+    "keywords": [
+        "auth",
+        "authentication",
+        "login",
+        "security",
+        "session",
+        "csrf",
+        "otp",
+        "rate-limit",
+        "magic-link",
+        "vpn-detection",
+        "proxy-detection",
+        "pipeline-lock",
+        "password-strength",
+        "php"
+    ],
     "license": "MIT",
     "authors": [
         {
@@ -12,8 +27,8 @@
         }
     ],
     "support": {
-        "type": "git",
-        "source": "https://github.com/Vercodea/auth-core.git"
+        "issues": "https://github.com/Vercodea/auth-core/issues",
+        "source": "https://github.com/Vercodea/auth-core"
     },
     "require": {
         "php": "^7.4 || ^8.0",
@@ -29,7 +44,7 @@
     },
     "autoload": {
         "files": [
-            "auth_init.php"
+            "src/entry/index.php"
         ]
     },
     "suggest": {
