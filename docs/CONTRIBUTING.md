@@ -142,10 +142,20 @@ auth-core/
 │   │   ├── network_check.php         # VPN/Proxy detection
 │   │   ├── email_otp_verifier.php    # OTP verification
 │   │   ├── session_manager.php       # Session handling
+│   │   ├── start_system.php          # System initialization
 │   │   ├── file_access_lock/
 │   │   │   └── gateway_locker.php    # Security gate
 │   │   └── otp_manager/
-│   │       └── otp_mailer.php        # Email delivery
+│   │       ├── otp_mailer.php        # Email delivery
+│   │       ├── message_loader.php    # Template loader
+│   │       └── Otp_messages/
+│   │           └── messages/
+│   │               ├── otp_code_msg.html         # OTP email template
+│   │               ├── password_recovery.html    # Recovery link template
+│   │               └── access_bridge_msg.html    # Lockout alert template
+│   ├── security-checks_tools/
+│   │   ├── common_passwords.txt      # 94,500 weak passwords
+│   │   └── reserved_passwords.txt    # Reserved words list
 │   └── src/
 │       ├── signup.php                # Registration handler
 │       ├── signin.php                # Login handler
@@ -305,6 +315,133 @@ log_activity("User $username logged in with password: $password");
 - [ ] No direct file inclusion (LFI/RFI)
 - [ ] Password hashing using PASSWORD_DEFAULT
 - [ ] Error messages don't expose system details
+
+---
+
+## Email Template Development
+
+### Email Templates Location
+
+All email templates are located in: `src/middleware/otp_manager/Otp_messages/messages/`
+
+### Template Files
+
+| Template | Purpose | Variables |
+|----------|---------|-----------|
+| `otp_code_msg.html` | OTP verification code | `{$otp_code}` |
+| `password_recovery.html` | Magic link password recovery | `{$reset_url}` |
+| `access_bridge_msg.html` | Account lockout alert | `{$ip_address}`, `{$blocked_at}`, `{$block_expires}` |
+
+### Template Guidelines
+
+**When modifying or creating email templates:**
+
+1. **Use semantic HTML** - Use proper HTML5 structure
+2. **Inline CSS** - All styles must be inline (email client compatibility)
+3. **Responsive Design** - Test on mobile and desktop
+4. **Accessible** - Use proper color contrast, alt text for images
+5. **No JavaScript** - Email clients don't support scripts
+6. **Variable Syntax** - Use `{$variable_name}` for substitution
+7. **No External Resources** - Avoid external CSS/JS/images
+
+### Template Example
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px;">
+        <h1 style="color: #333; font-size: 24px; margin-bottom: 16px;">Verification Code</h1>
+        <p style="color: #666; font-size: 14px; line-height: 1.6;">
+            Your verification code is: <strong>{$otp_code}</strong>
+        </p>
+        <p style="color: #999; font-size: 12px;">
+            This code expires in 5 minutes.
+        </p>
+    </div>
+</body>
+</html>
+```
+
+### Testing Email Templates
+
+```bash
+# 1. Test in development with Resend sandbox
+OTP_API_KEY=resend_sandbox_key
+
+# 2. Check email rendering in different clients
+# - Gmail, Outlook, Apple Mail, etc.
+
+# 3. Validate HTML
+# - W3C Markup Validator
+# - Email-specific linters
+```
+
+---
+
+## Middleware Development
+
+### Middleware Architecture
+
+The authentication system uses a **pipeline middleware** architecture:
+
+```
+Request → Gateway Check → Network Check → Rate Limit → Auth → Session → Response
+```
+
+### Creating New Middleware
+
+**Location:** `src/middleware/`
+
+**Template:**
+```php
+<?php
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/file_access_lock/gateway_locker.php';
+
+// ✅ ALWAYS verify pipeline access first
+verify_pipeline_access(['your_middleware.php', 'auth_init.php']);
+
+function your_middleware_function() {
+    try {
+        // Your logic here
+        log_activity("Middleware executed successfully");
+        return true;
+    } catch (Exception $e) {
+        error_log($e->getMessage());
+        return false;
+    }
+}
+?>
+```
+
+### Middleware Best Practices
+
+1. **Always verify pipeline access** - Prevent unauthorized execution
+2. **Use try-catch blocks** - Handle exceptions gracefully
+3. **Log activity** - Use `log_activity()` for audit trails
+4. **Return standardized format** - Return `['status' => bool, 'msg' => string]`
+5. **Respect rate limits** - Don't bypass existing security controls
+6. **Handle Redis errors** - Check Redis connection status
+7. **Document configuration** - Add env variables to README
+
+### Middleware Testing
+
+```bash
+# Test middleware in isolation
+php -r "require 'src/middleware/your_middleware.php'; var_dump(your_function());"
+
+# Test with mock data
+php -r "
+    \$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+    require 'src/middleware/network_check.php';
+    var_dump(check_ip());
+"
+```
 
 ---
 

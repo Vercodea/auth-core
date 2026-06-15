@@ -42,6 +42,8 @@
 - 📝 **Activity Logging** - Audit trail for all authentication events with timestamps and user info
 - 🔐 **SQL Injection Prevention** - 100% prepared statements via PDO
 - 🚪 **Pipeline Access Control** - File-level security to prevent unauthorized direct execution
+- 📬 **HTML Email Templates** - Beautiful, responsive email notifications for OTP, recovery, and account lockouts
+- 🔔 **Account Lockout Notifications** - Automatic email alerts when suspicious activity detected
 - 🌍 **Multi-Environment Support** - Development and production configurations
 
 ---
@@ -196,6 +198,104 @@ $result = AuthInit::auth_logout();
 | `LOG_DIR` | `./logs` | Application activity log directory |
 | `ACCOUNT_RECOVERY_LIMIT_TIME` | `300` | Magic link validity in seconds (5 min) |
 | `ACCOUNT_RECOVERY_SUBDOMAIN_PATH` | `http://localhost/recover` | Password recovery page URL |
+
+---
+
+## 📧 Email Notification System
+
+Vercodea Auth Core includes a comprehensive email notification system that automatically alerts users of important authentication events using beautifully designed HTML templates.
+
+### Email Templates
+
+#### 1. **OTP Verification Email**
+Sent when users request OTP during registration or authentication.
+- Template: `otp_code_msg.html`
+- Contains: 6-digit OTP code, expiration time (5 min default)
+- Used by: `auth_send_otp()`
+
+#### 2. **Password Recovery Email**
+Sent when users request account recovery via magic link.
+- Template: `password_recovery.html`
+- Contains: Secure recovery link with unique token and ID
+- Link format: `{$reset_page}?token={$magic_token}&id={$magic_id}`
+- Expiration: 5 minutes (configurable via `ACCOUNT_RECOVERY_LIMIT_TIME`)
+- Used by: `auth_account_recovery_link()`
+
+#### 3. **Account Lockout Alert Email**
+Sent when suspicious activity is detected (too many failed login attempts).
+- Template: `access_bridge_msg.html`
+- Contains: IP address, timestamp, lockout duration
+- Includes: Security timeline showing LOCKED → COOLDOWN → UNLOCKED states
+- Used by: Rate limiter when max attempts exceeded
+
+### Email Configuration
+
+All email sending is handled via the **Resend API**. Configure these environment variables:
+
+```env
+OTP_API_KEY=your_resend_api_key
+SEND_OTP_URL=https://api.resend.com/emails
+DOMAIN=yourdomain.com
+```
+
+### Template Customization
+
+To customize email templates:
+
+1. Locate template files in: `src/middleware/otp_manager/Otp_messages/messages/`
+2. Edit HTML templates (OTP variables use `{$variable_name}` syntax)
+3. Available variables by template:
+   - **otp_code_msg.html**: `{$otp_code}`
+   - **password_recovery.html**: `{$reset_url}`
+   - **access_bridge_msg.html**: `{$ip_address}`, `{$blocked_at}`, `{$block_expires}`
+
+---
+
+## 🏗️ Architecture & Middleware
+
+The system uses a **middleware pipeline** architecture with multiple security layers:
+
+### Middleware Stack
+
+| Middleware | Location | Purpose |
+|-----------|----------|---------|
+| **Pipeline Gateway** | `file_access_lock/gateway_locker.php` | File-level access control - prevents unauthorized direct execution |
+| **Network Check** | `network_check.php` | VPN/Proxy detection via ProxyCheck.io API |
+| **Rate Limiter** | `ratelimit.php` | IP-based and user-based throttling with account lockout |
+| **OTP Manager** | `otp_manager/otp_mailer.php` | OTP generation, caching, and email delivery |
+| **Email OTP Verifier** | `email_otp_verifier.php` | OTP validation and one-time use enforcement |
+| **Session Manager** | `session_manager.php` | Secure Redis-backed session handling |
+| **Start System** | `start_system.php` | System initialization and boot sequence |
+
+### Request Flow
+
+```
+User Request → Pipeline Gateway Check
+    ↓
+    Network Security Check (VPN/Proxy)
+    ↓
+    Rate Limiting (IP + User)
+    ↓
+    Authentication Processing
+    ↓
+    Session Management
+    ↓
+    Activity Logging
+```
+
+### Pipeline Access Control (Security Feature)
+
+The **gateway_locker.php** middleware enforces a whitelist of allowed entry points. Only authorized files can directly execute authentication code.
+
+**How it works:**
+1. Each authentication function verifies the caller is in the allowed files list
+2. Unauthorized direct execution attempts are blocked with HTTP 403
+3. Violations are logged for security audit
+
+**Example:**
+```php
+verify_pipeline_access(['signup.php', 'signin.php', 'index.php']);
+```
 
 ---
 
@@ -945,6 +1045,20 @@ sequenceDiagram
 | **Signin Rate Limit** | Dual-layer: IP + User account tracking |
 | **Lockout Duration** | 60 seconds (configurable via `PENALTY_PERIOD`) |
 | **Penalty Response** | HTTP 429, retry-after header |
+| **Account Lockout Alert** | Email notification sent to user with attack details |
+| **Lockout Information Included** | IP address, timestamp, duration, security timeline |
+
+### Email Notification Security
+
+| Feature | Details |
+|---------|---------|
+| **OTP Emails** | Beautiful HTML templates with 6-digit codes |
+| **Recovery Emails** | Secure magic link with unique token + ID |
+| **Lockout Alerts** | Suspicious activity notifications with timeline |
+| **Email Validation** | RFC-compliant format checks before sending |
+| **API Integration** | Resend API with Bearer token authentication |
+| **Template System** | Customizable HTML messages via `OtpMessageLoader` |
+| **Security Timeline** | Visual representation of LOCKED → COOLDOWN → UNLOCKED states |
 
 ### Session & CSRF Protection
 
@@ -985,11 +1099,14 @@ sequenceDiagram
 
 | Feature | Details |
 |---------|---------|
-| **Pipeline Access Control** | File-level security prevents direct execution |
+| **Pipeline Access Control** | File-level security prevents direct execution, whitelist-based |
+| **Gateway Locker Middleware** | `verify_pipeline_access()` enforces allowed file execution |
 | **Error Handling** | Production-safe logging, no error display to users |
 | **OTP One-Time Use** | OTP deleted immediately after verification |
 | **Magic Link Single-Use** | Recovery tokens deleted after password reset |
 | **Activity Logging** | All authentication events logged with audit trail |
+| **Middleware Stack** | Network check → Rate limit → Auth → Session → Logging |
+| **Intrusion Prevention** | Blocks unauthorized file access attempts with logging |
 
 ---
 
@@ -1019,14 +1136,17 @@ Configure with: `LOG_DIR` environment variable
 | User Signup | `New user registered: {username} ({email})` |
 | User Logout | `{username} logged out successfully at {timestamp}` |
 | OTP Sent | `OTP sent to {email}` |
+| OTP Email Sent | `Magic link email sent to {email}`  |
 | OTP Verified | `OTP verified successfully for: {email}` |
 | OTP Failed | `OTP verification failed (incorrect/expired) for: {email}` |
 | Recovery Link | `Account recovery link sent to {email}` |
 | Password Reset | `Password reset successful for email: {email}` |
 | Rate Limit Hit | `Rate limit exceeded for IP: {IP} (signup attempts)` |
-| Rate Limit Hit | `Rate limit exceeded for user: {username} (signin attempts)` |
 | Account Locked | `Account locked: {username} exceeded max signin attempts from {IP}` |
+| Lockout Email Sent | `Lockout notification sent to {email}` |
 | VPN Detected | `Security Alert: VPN/Proxy detected for IP: {IP}` |
+| Pipeline Violation | `Vercodea Intrusion Prevention: Pipeline Violation by [{caller_file}]` |
+| Invalid Access | `Unauthorized access attempt from {IP}` |
 
 ---
 
