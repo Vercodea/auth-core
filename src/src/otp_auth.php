@@ -10,5 +10,4 @@ function otp_sender($email) {
         log_activity("Failed to send OTP for email: {$email}");
         return ['status'=> false,'msg'=> 'Failed to Send OTP retry later'];
     }
-    return signup_otp_manager($email);
 }
