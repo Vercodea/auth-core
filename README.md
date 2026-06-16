@@ -27,7 +27,7 @@
 - [Troubleshooting](#-troubleshooting)
 - [License](#-license)
 - [Help Keep this project alive](#support)
-
+- <a href="#support">Support this project</a>
 ---
 
 ## ✨ Features
