@@ -7,6 +7,7 @@
 // Load environment first to access env() helper
 require_once('config_env.php');
 require_once __DIR__ . '/../Query/query_loader.php';
+require_once __DIR__ .'/../config/logs.php';
 config_env();
 
 $log_env = env('LOG_DIR', __DIR__ . '/../../../../../logs');
@@ -63,6 +64,7 @@ function redis_manager()
                 $redis->auth($password);
             }
         }
+        
     } catch (Exception $e) {
         http_response_code(500);
         error_log('Redis connection error: ' . $e->getMessage());

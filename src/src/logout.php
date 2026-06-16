@@ -17,19 +17,17 @@ function logout_manager()
 
     try {
         if (!$session_token || !$session_id) {
-            error_log('Session not found in cookies');
+            
             return ['status' => false, 'msg' => 'Failed to logout, Unauthorized access'];
         }
 
         $stored_session = $cache->hGet("session:{$session_id}", 'csrf_token');
         $user = $cache->hGet("session:{$session_id}", 'username');
         if (!$stored_session) {
-            error_log('Session Not found in cache');
             return ['status' => false, 'msg' => 'Failed to logout, Unauthorized access'];
         }
         $verify = hash_equals($stored_session, hash('sha256', $session_token));
         if (!$verify) {
-            error_log('Session mismatch');
             return ['status' => false, 'msg' => 'Invalid or Expired Session'];
         }
         $cache->del("session:{$session_id}");

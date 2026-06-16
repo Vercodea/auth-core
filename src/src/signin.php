@@ -32,7 +32,7 @@ function login_manager($username, $email, $password)
             return ['status' => false, 'msg' => 'Invalid Credentials'];
         }
         if (!isset($identity['password'])) {
-            error_log("User {$identity['id']} has no password hash");
+            log_activity("User {$identity['id']} has no password hash stored (signin attempt)");
             return ['status' => false, 'msg' => 'Account configuration error'];
         }
 
@@ -48,7 +48,7 @@ function login_manager($username, $email, $password)
             $setsession = $cache->hMSet("session:{$session_id}", $session_data);
             $cache->expire("session:{$session_id}", env('SESSION_EXPIRY', 3600));
             if (!$setsession) {
-                error_log("Failed to set session for user {$identity['id']}");
+                log_activity("Failed to set session for user {$identity['id']} (signin attempt)");
                 return ['status' => false, 'msg' => 'An error occurred. Please try again later.'];
             }
             $cookies_conf = [
@@ -61,7 +61,7 @@ function login_manager($username, $email, $password)
             ];
             setcookie('csrf-token', $csrf_token, $cookies_conf);
             setcookie('session-id', $session_id, $cookies_conf);
-            log_activity("User {$identity['username']} logged in successfully from " . ($_SERVER['REMOTE_ADDR'] ?? 'Unknown IP'));
+            log_activity("User {$identity['username']} logged in successfully from " . ($_SERVER['REMOTE_ADDR'] ?? 'Unknown IP (signin attempt)'));
             return ['status' => true, 'msg' => 'Login successful'];
         }
         return ['status' => false, 'msg' => 'Invalid Credentials'];
