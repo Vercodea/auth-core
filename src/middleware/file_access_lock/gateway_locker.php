@@ -6,7 +6,7 @@ function verify_pipeline_access(array $allowed_files): bool
     $caller_file = basename($trace[1]['file'] ?? '');
     $public_file = realpath(__DIR__ . '/../../entry/index.php');
 
-    if ($public_file || file_exists($public_file)) {
+    if ($public_file && file_exists($public_file) && realpath($trace[1]['file'] ?? '') === $public_file) {
         return true;
     }
     if (!in_array($caller_file, $allowed_files, true)) {

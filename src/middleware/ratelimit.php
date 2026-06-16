@@ -5,7 +5,7 @@ require_once __DIR__ . '/network_check.php';
 require_once __DIR__ . '/../config/config_env.php';
 require_once __DIR__ . '/file_access_lock/gateway_locker.php';
 require_once __DIR__ . '/../Query/query_loader.php';
-verify_pipeline_access(['network_check.php', 'signin.php', 'signup.php', 'email_otp_verifier.php']);
+verify_pipeline_access(['network_check.php', 'signin.php', 'signup.php', 'email_otp_verifier.php', 'ratelimit.php']);
 config_env();
 function ratelimit_manager_signup()
 {

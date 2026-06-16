@@ -15,7 +15,7 @@ if (!$trace[0]['file'] || !file_exists($caller_file)) {
     die('Unauthorized access');
 }
 
-verify_pipeline_access([]);
+verify_pipeline_access(['signup.php', 'signin.php', 'otp_auth.php', 'logout.php', 'account_recover.php', 'auth_init.php']);
 trait AuthInit_trait
 
 {

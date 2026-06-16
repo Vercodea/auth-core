@@ -2,7 +2,7 @@
 require_once __DIR__ . '/file_access_lock/gateway_locker.php';
 require_once __DIR__ . '/../config/logs.php';
 
-verify_pipeline_access(['ratelimit.php']);
+verify_pipeline_access(['ratelimit.php', 'network_check.php']);
 
 function check_ip()
 {
