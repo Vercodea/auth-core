@@ -26,6 +26,7 @@
 - [Best Practices](#-best-practices)
 - [Troubleshooting](#-troubleshooting)
 - [License](#-license)
+- [Help Keep this project alive](#support)
 
 ---
 
@@ -1242,7 +1243,7 @@ TTL: ACCOUNT_RECOVERY_LIMIT_TIME (default 300 seconds)
 # Add to .gitignore:
 echo ".env" >> .gitignore
 
-# Use strong API keys from Resend
+# Use strong API keys from Resend or any other providers
 OTP_API_KEY=re_your_secure_key_here_minimum_32_chars
 
 # Production settings
@@ -1756,7 +1757,7 @@ vendor/bin/phpunit
 
  ---
 
-## 💰 Support This Project
+## 💰 Support This Project{#support}
 
 ### Help Us Build Better Security
 
@@ -1764,11 +1765,14 @@ Vercodea Auth Core is and will always be **free and open-source** under the MIT 
 
 If this project saves you time, helps secure your application, or makes your life easier — please consider supporting its continued development:
 
-#### 🎯 Sponsorship Options
+Crypto donations welcome:
 
-- **[GitHub Sponsors](https://github.com/sponsors/vercodea)** - Recurring monthly support
-- **[Buy Me a Coffee](https://buymeacoffee.com/princeaka140)** - One-time contribution by the author
-
+| Currency | Address |
+|----------|---------|
+| BNB | `0x6647e10cA70EfA433C9589f1AD418838C00BA95F` |
+| SOL | `ViJe3xqgVzBh2WYvmbHj1hKC7HxLwNGYzXepsPtmJYC` |
+| BTC | `bc1qtlclcklp6w8yl0avsd5x2ffc9gt5dvpe72flzy` |
+| TON | `UQByP5DG_wjT9YqnreQkcgNXivIqq3iZNRq26t9DwtBqv9wt` |
 
 #### 💼 Enterprise Support
 
