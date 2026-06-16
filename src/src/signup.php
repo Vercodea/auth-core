@@ -32,7 +32,7 @@ function register_manager($name, $username, $email, $password, $otp_input)
         }
     }
 
-    $sql = QueryLoader::Load('signup/verify_user.sql', ['signup.php']);
+    $sql = QueryLoader::Load('signup/verify-user.sql', ['signup.php']);
     $stmt = $conn->prepare($sql);
     $stmt->execute([$username, $email]);
 
@@ -46,4 +46,3 @@ function register_manager($name, $username, $email, $password, $otp_input)
     log_activity("New user registered: {$username} ({$email})" . ' (signup attempt)');
     return ["status" => true, "msg" => "Registration successful"];
 }
-?>
