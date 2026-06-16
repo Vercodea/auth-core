@@ -111,7 +111,6 @@ DOMAIN=yourdomain.com
 ```php
 <?php
 require_once 'vendor/autoload.php';
-require_once 'vendor/vercodea/auth-core/src/auth_init.php';
 
 // Create all database tables automatically
 AuthInit::init();
@@ -127,7 +126,6 @@ echo "✅ Database initialized successfully!";
 ```php
 <?php
 require_once 'vendor/autoload.php';
-require_once 'vendor/vercodea/auth-core/src/auth_init.php';
 
 // User login
 $result = AuthInit::auth_login('johndoe', null, 'password');
@@ -306,7 +304,7 @@ Here's a complete guide showing **ALL 7 public methods** in a real-world workflo
 ```php
 <?php
 require_once 'vendor/autoload.php';
-require_once 'vendor/vercodea/auth-core/src/auth_init.php';
+
 
 // ============================================
 // SETUP: Initialize Database (Run once)
