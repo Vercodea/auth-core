@@ -23,7 +23,7 @@ function signup_otp_manager($email)
             $cache->expire($email, $expires);
             $domain = env('DOMAIN', 'localhost');
             setcookie('email', $email, time() + $expires, '/', '', false, true);
-            $html_message = OtpMessageLoader::Load('signup_otp.html', ['otp_mailer.php']);
+            $html_message = OtpMessageLoader::Load('otp_code_msg.html', ['otp_mailer.php']);
             $html_message = str_replace('{$otp_code}', $otp_code, $html_message);
             $payload = [
                 'from' => $domain,
