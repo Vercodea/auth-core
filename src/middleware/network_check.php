@@ -6,12 +6,9 @@ verify_pipeline_access(['ratelimit.php', 'network_check.php']);
 
 function check_ip()
 {
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip_list = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $ip = $ip_list[0];
-    } else {
-        $ip = $_SERVER['REMOTE_ADDR'];
-    }
+    $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
+        ? $_SERVER['HTTP_CF_CONNECTING_IP']
+        : ($_SERVER['REMOTE_ADDR'] ?? '');
     $check_proxy_url = "https://proxycheck.io/v2/" . $ip . "?vpn=1&asn=1";
     $curl = curl_init();
     curl_setopt($curl, CURLOPT_URL, $check_proxy_url);
