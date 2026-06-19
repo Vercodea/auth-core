@@ -20,10 +20,10 @@ function verify_pipeline_access(array $allowed_files): bool
 function restrict_file_access($caller_file)
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-    if (!$trace[0]['file']) {
+    if (!$trace[0]['file'] || !file_exists($trace[0]['file'])) {
         http_response_code(429);
         log_activity('Unauthorized access attempt to signin.php');
-        die('Unauthorized access');
+        exit('Unauthorized access');
     }
     return true;
 }

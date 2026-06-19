@@ -8,13 +8,9 @@ require_once __DIR__ . '/middleware/file_access_lock/gateway_locker.php';
 require_once __DIR__ . '/middleware/start_system.php';
 require_once __DIR__ . '/middleware/email_otp_verifier.php';
 
-$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 $caller_file = __DIR__ . '/../src/entry/index.php';
 
-if (!$trace[0]['file'] || !file_exists($caller_file)) {
-    die('Unauthorized access');
-}
-
+restrict_file_access( $caller_file);
 verify_pipeline_access(['signup.php', 'signin.php', 'otp_auth.php', 'logout.php', 'account_recover.php', 'auth_init.php']);
 trait AuthInit_trait
 
